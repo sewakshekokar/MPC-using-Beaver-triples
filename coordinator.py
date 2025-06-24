@@ -28,8 +28,8 @@ def handle_client(conn, addr):
         run_mpc()
 
 def run_mpc():
-    x, y = 7, 3  # You can change these inputs
-    print(f"\n🔐 Running MPC for x = {x}, y = {y}")
+    x, y = 7, 3  # inputs
+    print(f"\n Running MPC for x = {x}, y = {y}")
 
     x_shares = share_secret(x)
     y_shares = share_secret(y)
@@ -41,7 +41,7 @@ def run_mpc():
     b_shares = share_secret(b)
     c_shares = share_secret(c)
 
-    print(f"🔑 Beaver Triple: a = {a}, b = {b}, c = {c}\n")
+    print(f"Beaver Triple: a = {a}, b = {b}, c = {c}\n")
 
     # Send shares to each party
     for i in range(NUM_PARTIES):
@@ -57,7 +57,7 @@ def run_mpc():
     responses = recv_all()
     d = sum(r['d'] for r in responses)
     e = sum(r['e'] for r in responses)
-    print(f"🧾 Public d = {d}, e = {e}")
+    print(f" Public d = {d}, e = {e}")
 
     # Send d, e back to each party
     send_all({'d': d, 'e': e})
@@ -66,14 +66,14 @@ def run_mpc():
     result_shares = recv_all()
     result = sum(r['share'] for r in result_shares)
 
-    print(f"\n✅ Secure x × y = {result}")
-    print(f"✅ Actual x × y = {x * y}\n")
+    print(f"\n Secure x × y = {result}")
+    print(f" Actual x × y = {x * y}\n")
 
 # Start coordinator
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))
     s.listen()
-    print("🧠 Coordinator waiting for 3 parties...")
+    print("Coordinator waiting for 3 parties...")
 
     while len(clients) < NUM_PARTIES:
         conn, addr = s.accept()
