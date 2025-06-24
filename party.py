@@ -4,7 +4,6 @@ import pickle
 
 HOST = 'localhost'
 PORT = 9999
-NUM_PARTIES = 3
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
@@ -22,11 +21,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     e_i = y - b
     s.sendall(pickle.dumps({'d': d_i, 'e': e_i}))
 
-    # Step 3: Receive public d and e
+    # Step 3: Receive public d, e and share of d*e
     d_e = pickle.loads(s.recv(4096))
     d = d_e['d']
     e = d_e['e']
+    de_share = d_e['de_share']
 
-    # Step 4: Compute local share of product
-    share = round((d * e) / NUM_PARTIES) + d * b + e * a + c
+    # Step 4: Correct final share calculation (no rounding!)
+    share = de_share + d * b + e * a + c
     s.sendall(pickle.dumps({'share': share}))
