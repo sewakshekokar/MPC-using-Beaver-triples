@@ -28,12 +28,14 @@ def handle_client(conn, addr):
         run_mpc()
 
 def run_mpc():
-    x, y = 7, 3  # inputs
+    x, y = 8, 6   # input
     print(f"\n Running MPC for x = {x}, y = {y}")
 
+    # Step 1: Share inputs
     x_shares = share_secret(x)
     y_shares = share_secret(y)
 
+    # Step 2: Generate Beaver triple
     a = random.randint(1, 10)
     b = random.randint(1, 10)
     c = a * b
@@ -41,9 +43,9 @@ def run_mpc():
     b_shares = share_secret(b)
     c_shares = share_secret(c)
 
-    print(f"Beaver Triple: a = {a}, b = {b}, c = {c}\n")
+    print(f" Beaver Triple: a = {a}, b = {b}, c = {c}\n")
 
-    # Send shares to each party
+    # Step 3: Send shares to each party
     for i in range(NUM_PARTIES):
         clients[i].sendall(pickle.dumps({
             'x': x_shares[i],
@@ -53,27 +55,36 @@ def run_mpc():
             'c': c_shares[i]
         }))
 
-    # Receive d_i, e_i
+    # Step 4: Receive masked differences (d_i, e_i)
     responses = recv_all()
     d = sum(r['d'] for r in responses)
     e = sum(r['e'] for r in responses)
     print(f" Public d = {d}, e = {e}")
 
-    # Send d, e back to each party
-    send_all({'d': d, 'e': e})
+    # Step 5: Secret-share d * e
+    de = d * e
+    de_shares = share_secret(de)
 
-    # Receive final result shares
+    # Step 6: Send each party their de_share
+    for i in range(NUM_PARTIES):
+        clients[i].sendall(pickle.dumps({
+            'd': d,
+            'e': e,
+            'de_share': de_shares[i]
+        }))
+
+    # Step 7: Receive final result shares and reconstruct
     result_shares = recv_all()
     result = sum(r['share'] for r in result_shares)
 
     print(f"\n Secure x × y = {result}")
     print(f" Actual x × y = {x * y}\n")
 
-# Start coordinator
+# Start the coordinator
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))
     s.listen()
-    print("Coordinator waiting for 3 parties...")
+    print(" Coordinator waiting for 3 parties...")
 
     while len(clients) < NUM_PARTIES:
         conn, addr = s.accept()
@@ -81,4 +92,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
 
     while True:
-        pass  # Keep server alive
+        pass  # Keep server running
